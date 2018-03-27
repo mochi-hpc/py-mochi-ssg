@@ -5,17 +5,20 @@ import pkgconfig
 import os
 import os.path
 import sys
+import mpi4py
 
 (opt,) = get_config_vars('OPT')
 os.environ['OPT'] = " ".join(
 		    flag for flag in opt.split() if flag != '-Wstrict-prototypes'
 		)
 
+mpi4py_path = os.path.dirname(mpi4py.__file__)
+
 server_libs = ['boost_python']
 server_libs += pkgconfig.parse('ssg')['libraries']
 pymobject_server_module = Extension('_pyssg', ["pyssg/src/ssg.cpp"],
 		           libraries=server_libs,
-			   include_dirs=['.'],
+			   include_dirs=['.', mpi4py_path+'/include'],
 			   depends=[])
 
 setup(name='pyssg',
