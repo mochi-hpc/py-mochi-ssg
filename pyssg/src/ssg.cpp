@@ -9,14 +9,18 @@
 #include <boost/python/module.hpp>
 #include <boost/python/return_opaque_pointer.hpp>
 #include <boost/python/return_value_policy.hpp>
+#if HAS_MPI4PY
 #include <mpi.h>
 #include <mpi4py/mpi4py.h>
+#endif
 #include <string>
 #include <iostream>
 #include <vector>
 #include <margo.h>
 #include <ssg.h>
+#if HAS_MPI4PY
 #include <ssg-mpi.h>
+#endif
 
 namespace bpl = boost::python;
 
@@ -65,6 +69,7 @@ static ssg_group_id_t pyssg_create_group_from_config(
     return gid;
 }
 
+#if HAS_MPI4PY
 static ssg_group_id_t pyssg_create_group_from_mpi(
         const std::string& group_name,
         const bpl::object& comm,
@@ -82,13 +87,16 @@ static ssg_group_id_t pyssg_create_group_from_mpi(
     }
     return gid;
 }
+#endif
 
 BOOST_PYTHON_MODULE(_pyssg)
 {
+#if HAS_MPI4PY
     if (import_mpi4py() < 0) {
         std::cerr << "ERROR: could not import mpi4py from Boost Python module _pyssg" << std::endl;
         return;
     }
+#endif
 
 #define ret_policy_opaque bpl::return_value_policy<bpl::return_opaque_pointer>()
 
@@ -100,7 +108,9 @@ BOOST_PYTHON_MODULE(_pyssg)
     bpl::def("init", &ssg_init);
     bpl::def("finalize", &ssg_finalize);
     bpl::def("create_group", &pyssg_create_group, ret_policy_opaque);
+#if HAS_MPI4PY
     bpl::def("create_from_mpi", &pyssg_create_group_from_mpi, ret_policy_opaque);
+#endif
     bpl::def("create_from_config", &pyssg_create_group_from_config, ret_policy_opaque);
     bpl::def("free_group", &ssg_group_id_free);
 
