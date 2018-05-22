@@ -28,10 +28,13 @@ BOOST_PYTHON_OPAQUE_SPECIALIZED_TYPE_ID(margo_instance)
 BOOST_PYTHON_OPAQUE_SPECIALIZED_TYPE_ID(ssg_group_descriptor)
 
 static void pyssg_membership_update_cb(ssg_membership_update_t update, void* arg) {
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
     bpl::object* callable = static_cast<bpl::object*>(arg);
     if(callable->ptr() != Py_None) {
         (*callable)(update.member, (ssg_membership_update_type)update.type);
     }
+    PyGILState_Release(gstate);
 }
 
 static ssg_group_id_t pyssg_create_group(
@@ -47,11 +50,16 @@ static ssg_group_id_t pyssg_create_group(
     for(auto& s : addresses) {
         group_addr_strs.push_back(s.c_str());
     }
-    ssg_group_id_t gid = ssg_group_create(group_name.c_str(),
+    
+    void* uarg = static_cast<void*>(new bpl::object(mem_update));
+    ssg_group_id_t gid;
+    Py_BEGIN_ALLOW_THREADS
+    gid = ssg_group_create(group_name.c_str(),
             group_addr_strs.data(),
             group_addr_strs.size(),
             &pyssg_membership_update_cb,
-            static_cast<void*>(new bpl::object(mem_update)));
+            uarg);
+    Py_END_ALLOW_THREADS
     // XXX we are leaking memory here since there is no way to
     // delete the new-ed bpl::object when the group is destroyed
     return gid;
@@ -62,10 +70,14 @@ static ssg_group_id_t pyssg_create_group_from_config(
         const std::string& config,
         const bpl::object& mem_update = bpl::object())
 {
-    ssg_group_id_t gid = ssg_group_create_config(group_name.c_str(),
+    ssg_group_id_t gid;
+    void* uarg = static_cast<void*>(new bpl::object(mem_update));
+    Py_BEGIN_ALLOW_THREADS
+    gid = ssg_group_create_config(group_name.c_str(),
             config.c_str(),
             &pyssg_membership_update_cb,
-            static_cast<void*>(new bpl::object(mem_update)));
+            uarg);
+    Py_END_ALLOW_THREADS
     return gid;
 }
 
@@ -78,10 +90,14 @@ static ssg_group_id_t pyssg_create_group_from_mpi(
     PyObject* py_comm = comm.ptr();
     MPI_Comm *comm_p = PyMPIComm_Get(py_comm);
     if (comm_p == NULL) bpl::throw_error_already_set();
-    ssg_group_id_t gid = ssg_group_create_mpi(group_name.c_str(),
+    ssg_group_id_t gid;
+    void* uarg = static_cast<void*>(new bpl::object(mem_update));
+    Py_BEGIN_ALLOW_THREADS
+    gid = ssg_group_create_mpi(group_name.c_str(),
             *comm_p,
             &pyssg_membership_update_cb,
-            static_cast<void*>(new bpl::object(mem_update)));
+            uarg);
+    Py_END_ALLOW_THREADS
     if(gid == SSG_GROUP_ID_NULL) {
         std::cerr << "ERROR: could not create SSG group from MPI communicator" << std::endl;
     }
