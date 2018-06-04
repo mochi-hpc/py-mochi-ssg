@@ -21,11 +21,8 @@ os.environ['OPT'] = " ".join(
 		    flag for flag in opt.split() if flag != '-Wstrict-prototypes'
 		)
 
-python_version = str(sys.version_info[0])+str(sys.version_info[1])
-
 pk = pkgconfig.parse('ssg')
 libraries = pk['libraries']
-libraries.append('boost_python'+python_version)
 library_dirs = pk['library_dirs']
 include_dirs = pk['include_dirs']
 include_dirs.append(".")
