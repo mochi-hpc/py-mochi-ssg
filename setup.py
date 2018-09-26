@@ -33,6 +33,7 @@ pymobject_server_module = Extension('_pyssg', ["pyssg/src/ssg.cpp"],
 		           libraries=libraries,
                    library_dirs=library_dirs,
                    include_dirs=include_dirs,
+                   extra_compile_args=['-std=c++11'],
                    depends=["pyssg/src/ssg.cpp"],
                    define_macros=[('HAS_MPI4PY', has_mpi4py)])
 
