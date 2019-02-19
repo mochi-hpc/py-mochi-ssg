@@ -1,10 +1,15 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.sysconfig import get_config_vars
+import pybind11
 import pkgconfig
 import os
 import os.path
 import sys
+
+def get_pybind11_include():
+    path = os.path.dirname(pybind11.__file__)
+    return '/'.join(path.split('/')[0:-4] + ['include'])
 
 # Find out if MPI4PY is present
 try:
@@ -26,6 +31,7 @@ libraries = pk['libraries']
 library_dirs = pk['library_dirs']
 include_dirs = pk['include_dirs']
 include_dirs.append(".")
+include_dirs.append(get_pybind11_include())
 if(has_mpi4py == 1):
     include_dirs.append(mpi4py_path+'/include')
 
@@ -38,7 +44,7 @@ pymobject_server_module = Extension('_pyssg', ["pyssg/src/ssg.cpp"],
                    define_macros=[('HAS_MPI4PY', has_mpi4py)])
 
 setup(name='pyssg',
-      version='0.1',
+      version='0.1.1',
       author='Matthieu Dorier',
       description="""Python binding for SSG""",      
       ext_modules=[ pymobject_server_module ],
