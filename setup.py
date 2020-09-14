@@ -2,6 +2,7 @@ from distutils.core import setup
 from distutils.extension import Extension
 from distutils.sysconfig import get_config_vars
 import pybind11
+from pybind11 import get_include
 import pkgconfig
 import os
 import os.path
@@ -32,6 +33,12 @@ library_dirs = pk['library_dirs']
 include_dirs = pk['include_dirs']
 include_dirs.append(".")
 include_dirs.append(get_pybind11_include())
+
+# use pybind11 built-in machinery to find header
+# include paths in Python virtualenvs
+# see: https://github.com/pybind/pybind11/pull/1190
+include_dirs.append(get_include())
+
 if(has_mpi4py == 1):
     include_dirs.append(mpi4py_path+'/include')
 
