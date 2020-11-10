@@ -72,7 +72,7 @@ static ssg_group_id_t pyssg_group_create(
             update_cb_dat,
             &ssgid);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_group_create returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_group_create returned ") + std::to_string(ret));
     }
     return ssgid;
 }
@@ -106,7 +106,7 @@ static ssg_group_id_t pyssg_group_create_config(
             update_cb_dat,
             &ssgid);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_group_create_config returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_group_create_config returned ") + std::to_string(ret));
     }
 
     return ssgid;
@@ -146,7 +146,7 @@ static ssg_group_id_t pyssg_group_create_mpi(
             uarg,
             &ssgid);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_group_create_mpi returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_group_create_mpi returned ") + std::to_string(ret));
     }
     return ssgid;
 }
@@ -202,7 +202,7 @@ static ssg_member_id_t pyssg_get_self_id(pymargo_instance_id mid) {
     ssg_member_id_t self_id;
     int ret = ssg_get_self_id(mid, &self_id);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_get_self_id returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_self_id returned ") + std::to_string(ret));
     }
     return self_id;
 }
@@ -211,7 +211,7 @@ static int pyssg_get_group_size(ssg_group_id_t ssgid) {
     int group_size;
     int ret = ssg_get_group_size(ssgid, &group_size);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_get_group_size returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_group_size returned ") + std::to_string(ret));
     }
     return group_size;
 }
@@ -220,7 +220,7 @@ static pymargo_addr pyssg_get_group_member_addr(ssg_group_id_t group_id, ssg_mem
     hg_addr_t addr;
     int ret = ssg_get_group_member_addr(group_id, member_id, &addr);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_get_group_member_addr returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_group_member_addr returned ") + std::to_string(ret));
     }
     return ADDR2CAPSULE(addr);
 }
@@ -229,7 +229,7 @@ static int pyssg_get_group_self_rank(ssg_group_id_t group_id) {
     int self_rank;
     int ret = ssg_get_group_self_rank(group_id, &self_rank);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_get_group_self_rank returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_group_self_rank returned ") + std::to_string(ret));
     }
     return self_rank;
 }
@@ -238,7 +238,7 @@ static int pyssg_get_group_member_rank(ssg_group_id_t group_id, ssg_member_id_t 
     int rank;
     int ret = ssg_get_group_member_rank(group_id, member_id, &rank);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_get_group_member_rank returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_group_member_rank returned ") + std::to_string(ret));
     }
     return rank;
 }
@@ -247,7 +247,7 @@ static ssg_member_id_t pyssg_get_group_member_id_from_rank(ssg_group_id_t group_
     ssg_member_id_t member_id;
     int ret = ssg_get_group_member_id_from_rank(group_id, rank, &member_id);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_get_group_member_id_from_rank returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_group_member_id_from_rank returned ") + std::to_string(ret));
     }
     return member_id;
 }
@@ -258,7 +258,7 @@ static std::vector<ssg_member_id_t> pyssg_get_group_member_ids_from_range(ssg_gr
     std::vector<ssg_member_id_t> result(rank_end-rank_start);
     int ret = ssg_get_group_member_ids_from_range(group_id, rank_start, rank_end, result.data());
     if(ret != 0) 
-        throw std::runtime_error(std::string("ssg_get_group_member_ids_from_range returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_get_group_member_ids_from_range returned ") + std::to_string(ret));
     return result;
 }
 
@@ -266,7 +266,7 @@ static std::string pyssg_group_id_get_addr_str(ssg_group_id_t group_id, unsigned
     char* addr;
     int ret = ssg_group_id_get_addr_str(group_id, addr_index, &addr);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error(std::string("ssg_group_id_get_addr_str returned") + std::to_string(ret));
+        throw std::runtime_error(std::string("ssg_group_id_get_addr_str returned ") + std::to_string(ret));
     }
     if(addr) return std::string(addr);
     else return std::string();
