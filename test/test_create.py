@@ -39,4 +39,3 @@ def test_tcp_ssg_engine_names(group_name):
         assert isinstance(g._Group__group_id, int)
 
         g.leave()
-        engine.finalize()
