@@ -19,15 +19,6 @@ def test_tcp_ssg_engine_names(group_name):
     # (hypothesis will try an empty string,
     # strange unicode strings, etc.)
 
-    # NOTE: at the moment the creation of multiple
-    # engine contexts from the same Python process
-    # does not appear to be tolerated?
-    
-    # We'll need to
-    # make sure each test case/example is launched from
-    # its own (sub)process somehow, but so far pytest-subtests
-    # is not up to the task when combined with hypothesis case
-    # generation
     with Engine('ofi+tcp', pymargo.core.server) as engine:
         g = pyssg.groups.create(group_name, engine, config=Config(),
                             addresses=[ str(engine.addr()) ],
