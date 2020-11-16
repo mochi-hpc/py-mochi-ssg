@@ -40,4 +40,3 @@ def test_tcp_ssg_engine_names(group_name):
 
         g.leave()
         engine.finalize()
-        pyssg.finalize()
