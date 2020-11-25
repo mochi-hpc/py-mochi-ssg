@@ -54,3 +54,4 @@ def test_tcp_ssg_engine(
             assert g.rank == 0
             assert isinstance(g._Group__group_id, int)
             g.leave()
+            engine.finalize()
