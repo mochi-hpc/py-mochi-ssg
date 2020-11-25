@@ -74,6 +74,16 @@ class Group():
             else:
                 _pyssg.group_destroy(self.__group_id)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.__group_id is not None:
+            if self.__is_member:
+                _pyssg.group_leave(self.__group_id)
+            else:
+                _pyssg.group_destroy(self.__group_id)
+
     @property
     def is_member(self):
         return self.__is_member
