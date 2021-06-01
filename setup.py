@@ -46,14 +46,14 @@ pymobject_server_module = Extension('_pyssg', ["pyssg/src/ssg.cpp"],
 		           libraries=libraries,
                    library_dirs=library_dirs,
                    include_dirs=include_dirs,
-                   extra_compile_args=['-std=c++11'],
+                   extra_compile_args=['-std=c++14'],
                    depends=["pyssg/src/ssg.cpp"],
                    define_macros=[('HAS_MPI4PY', has_mpi4py)])
 
 setup(name='pyssg',
-      version='0.1.1',
+      version='0.1.2',
       author='Matthieu Dorier',
-      description="""Python binding for SSG""",      
+      description="""Python binding for SSG""",
       ext_modules=[ pymobject_server_module ],
       packages=['pyssg']
      )

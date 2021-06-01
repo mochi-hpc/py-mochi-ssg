@@ -1,6 +1,6 @@
 /*
  * (C) 2018 The University of Chicago
- * 
+ *
  * See COPYRIGHT in top-level directory.
  */
 #include <pybind11/pybind11.h>
@@ -18,7 +18,9 @@
 #if HAS_MPI4PY
 #include <ssg-mpi.h>
 #endif
+#include <string>
 
+using namespace std::string_literals;
 namespace py11 = pybind11;
 
 typedef py11::capsule pymargo_instance_id;
@@ -61,16 +63,18 @@ static ssg_group_id_t pyssg_group_create(
 
     void* update_cb_dat = static_cast<void*>(new py11::object(update_cb));
 
-    ssg_group_id_t ssgid = ssg_group_create(
+    ssg_group_id_t ssgid = SSG_GROUP_ID_INVALID;
+    int ret = ssg_group_create(
             mid,
             group_name.c_str(),
             group_addr_strs_v.data(),
             group_addr_strs_v.size(),
             &gconf,
             pyssg_membership_update_cb,
-            update_cb_dat);
-    if(ssgid == SSG_GROUP_ID_INVALID) {
-        throw std::runtime_error("ssg_group_create_mpi failed");
+            update_cb_dat,
+            &ssgid);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("ssg_group_create_mpi returned "s + std::to_string(ret));
     }
     return ssgid;
 }
@@ -94,15 +98,16 @@ static ssg_group_id_t pyssg_group_create_config(
 
     void* update_cb_dat = static_cast<void*>(new py11::object(update_cb));
 
-    ssg_group_id_t ssgid = ssg_group_create_config(
+    ssg_group_id_t ssgid = SSG_GROUP_ID_INVALID;
+    int ret = ssg_group_create_config(
             mid,
             group_name.c_str(),
             file_name.c_str(),
             &gconf,
             pyssg_membership_update_cb,
-            update_cb_dat);
-    if(ssgid == SSG_GROUP_ID_INVALID) {
-        throw std::runtime_error("ssg_group_create_mpi failed");
+            update_cb_dat, &ssgid);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("ssg_group_create_mpi returned "s + std::to_string(ret));
     }
 
     return ssgid;
@@ -133,15 +138,15 @@ static ssg_group_id_t pyssg_group_create_mpi(
     if(group_conf.count("ssg_credential"))
         gconf.ssg_credential = group_conf["ssg_credential"];
 
-    gid = ssg_group_create_mpi(
+    int ret = ssg_group_create_mpi(
             mid,
             group_name.c_str(),
             *comm_p,
             &gconf,
             &pyssg_membership_update_cb,
-            uarg);
-    if(gid == SSG_GROUP_ID_INVALID) {
-        throw std::runtime_error("ssg_group_create_mpi failed");
+            uarg, &gid);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("ssg_group_create_mpi returned "s + std::to_string(ret));
     }
     return gid;
 }
@@ -194,27 +199,51 @@ static int pyssg_group_unobserve(ssg_group_id_t group_id) {
 }
 
 static ssg_member_id_t pyssg_get_self_id(pymargo_instance_id mid) {
-    return ssg_get_self_id(mid);
+    ssg_member_id_t member_id;
+    int ret = ssg_get_self_id(mid, &member_id);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_self_id returned "s + std::to_string(ret));
+    return member_id;
 }
 
 static int pyssg_get_group_size(ssg_group_id_t ssgid) {
-    return ssg_get_group_size(ssgid);
+    int size;
+    int ret = ssg_get_group_size(ssgid, &size);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_size returned "s + std::to_string(ret));
+    return size;
 }
 
 static pymargo_addr pyssg_get_group_member_addr(ssg_group_id_t group_id, ssg_member_id_t member_id) {
-    return ADDR2CAPSULE(ssg_get_group_member_addr(group_id, member_id));
+    hg_addr_t addr = HG_ADDR_NULL;
+    int ret = ssg_get_group_member_addr(group_id, member_id, &addr);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_member_addr returned "s + std::to_string(ret));
+    return ADDR2CAPSULE(addr);
 }
 
 static int pyssg_get_group_self_rank(ssg_group_id_t group_id) {
-    return ssg_get_group_self_rank(group_id);
+    int rank;
+    int ret = ssg_get_group_self_rank(group_id, &rank);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_self_rank returned "s + std::to_string(ret));
+    return rank;
 }
 
 static int pyssg_get_group_member_rank(ssg_group_id_t group_id, ssg_member_id_t member_id) {
-    return ssg_get_group_member_rank(group_id, member_id);
+    int rank;
+    int ret = ssg_get_group_member_rank(group_id, member_id, &rank);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_member_rank returned "s + std::to_string(ret));
+    return rank;
 }
 
 static ssg_member_id_t pyssg_get_group_member_id_from_rank(ssg_group_id_t group_id, int rank) {
-    return ssg_get_group_member_id_from_rank(group_id, rank);
+    ssg_member_id_t member_id;
+    int ret = ssg_get_group_member_id_from_rank(group_id, rank, &member_id);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_member_id_from_rank returned "s + std::to_string(ret));
+    return member_id;
 }
 
 static std::vector<ssg_member_id_t> pyssg_get_group_member_ids_from_range(ssg_group_id_t group_id,
@@ -222,15 +251,20 @@ static std::vector<ssg_member_id_t> pyssg_get_group_member_ids_from_range(ssg_gr
         int rank_end) {
     std::vector<ssg_member_id_t> result(rank_end-rank_start);
     int ret = ssg_get_group_member_ids_from_range(group_id, rank_start, rank_end, result.data());
-    if(ret != 0) 
-        throw std::runtime_error(std::string("ssg_get_group_member_ids_from_range returned") + std::to_string(ret));
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_member_ids_from_range returned "s + std::to_string(ret));
     return result;
 }
 
 static std::string pyssg_group_id_get_addr_str(ssg_group_id_t group_id, unsigned int addr_index) {
-    char* addr = ssg_group_id_get_addr_str(group_id, addr_index);
-    if(addr) return std::string(addr);
-    else return std::string();
+    char* addr = NULL;
+    int ret = ssg_group_id_get_addr_str(group_id, addr_index, &addr);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("ssg_group_id_get_addr_str returned "s + std::to_string(ret));
+    }
+    auto addr_str = std::string(addr);
+    free(addr);
+    return addr_str;
 }
 
 static int64_t pyssg_group_id_get_cred(ssg_group_id_t group_id) {
