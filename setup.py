@@ -17,8 +17,6 @@ try:
     import mpi4py
     has_mpi4py = 1
     mpi4py_path = os.path.dirname(mpi4py.__file__)
-    os.environ["CC"] = "mpicc"
-    os.environ["CXX"] = "mpicxx"
 except ImportError:
     has_mpi4py = 0
 
