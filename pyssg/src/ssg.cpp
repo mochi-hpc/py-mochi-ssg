@@ -19,7 +19,7 @@
 #include <ssg-mpi.h>
 #endif
 #include <string>
-#ifdef COLZA_ENABLE_DRC
+#ifdef HAS_DRC
 extern "C" {
 #include <rdmacred.h>
 }
@@ -309,7 +309,7 @@ static void pyssg_group_dump(ssg_group_id_t group_id) {
 
 uint32_t pyssg_get_credentials_from_ssg_file(const std::string& filename) {
     uint32_t cookie = 0;
-#ifdef COLZA_ENABLE_DRC
+#if HAS_DRC
     int num_addrs = 1;
     ssg_group_id_t gid;
     int ret = ssg_group_id_load(filename.c_str(), &num_addrs, &gid);
