@@ -19,7 +19,7 @@
 #include <ssg-mpi.h>
 #endif
 #include <string>
-#ifdef HAS_DRC
+#if HAS_DRC
 extern "C" {
 #include <rdmacred.h>
 }
