@@ -22,3 +22,5 @@ __auto_init = int(os.environ.get('PYSSG_AUTO_INIT', 1))
 if (__auto_init == 1):
     init()
     atexit.register(finalize)
+
+get_credentials_from_ssg_file = _pyssg.get_credentials_from_ssg_file

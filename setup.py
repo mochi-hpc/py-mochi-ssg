@@ -4,6 +4,7 @@ from distutils.sysconfig import get_config_vars
 import pybind11
 from pybind11 import get_include
 import pkgconfig
+from pkgconfig.pkgconfig import PackageNotFoundError
 import os
 import os.path
 import sys
@@ -31,6 +32,16 @@ library_dirs = pk['library_dirs']
 include_dirs = pk['include_dirs']
 include_dirs.append(".")
 include_dirs.append(get_pybind11_include())
+extra_compile_args=['-std=c++14']
+
+try:
+    drc = pkgconfig.parse('cray-drc')
+    libraries.extend(drc['libraries'])
+    library_dirs.extend(drc['library_dirs'])
+    include_dirs.extend(drc['include_dirs'])
+    has_cray_drc = 1
+except PackageNotFoundError:
+    has_cray_drc = 0
 
 # use pybind11 built-in machinery to find header
 # include paths in Python virtualenvs
@@ -41,12 +52,13 @@ if(has_mpi4py == 1):
     include_dirs.append(mpi4py_path+'/include')
 
 pymobject_server_module = Extension('_pyssg', ["pyssg/src/ssg.cpp"],
-		           libraries=libraries,
+                   libraries=libraries,
                    library_dirs=library_dirs,
                    include_dirs=include_dirs,
-                   extra_compile_args=['-std=c++14'],
+                   extra_compile_args=extra_compile_args,
                    depends=["pyssg/src/ssg.cpp"],
-                   define_macros=[('HAS_MPI4PY', has_mpi4py)])
+                   define_macros=[('HAS_MPI4PY', has_mpi4py),
+                                  ('HAS_DRC', has_cray_drc)])
 
 setup(name='pyssg',
       version='0.1.2',

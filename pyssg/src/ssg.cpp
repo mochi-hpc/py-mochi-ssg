@@ -19,6 +19,11 @@
 #include <ssg-mpi.h>
 #endif
 #include <string>
+#ifdef COLZA_ENABLE_DRC
+extern "C" {
+#include <rdmacred.h>
+}
+#endif
 
 using namespace std::string_literals;
 namespace py11 = pybind11;
@@ -302,6 +307,33 @@ static void pyssg_group_dump(ssg_group_id_t group_id) {
     ssg_group_dump(group_id);
 }
 
+uint32_t pyssg_get_credentials_from_ssg_file(const std::string& filename) {
+    uint32_t cookie = 0;
+#ifdef COLZA_ENABLE_DRC
+    int num_addrs = 1;
+    ssg_group_id_t gid;
+    int ret = ssg_group_id_load(filename.c_str(), &num_addrs, &gid);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("Could not load SSG group id from file");
+    }
+    int64_t credential_id = -1;
+    ret = ssg_group_id_get_cred(gid, &credential_id);
+    if(credential_id == -1)
+        return cookie;
+    //ssg_group_destroy(gid);
+
+    drc_info_handle_t drc_credential_info;
+
+    ret = drc_access(credential_id, 0, &drc_credential_info);
+    if(ret != DRC_SUCCESS) {
+        throw std::runtime_error("drc_access failed");
+    }
+
+    cookie = drc_get_first_cookie(drc_credential_info);
+#endif
+    return cookie;
+}
+
 PYBIND11_MODULE(_pyssg, m)
 {
 #if HAS_MPI4PY
@@ -345,4 +377,5 @@ PYBIND11_MODULE(_pyssg, m)
     m.def("group_id_store", &pyssg_group_id_store);
     m.def("group_id_load", &pyssg_group_id_load);
     m.def("group_dump", &pyssg_group_dump);
+    m.def("get_credentials_from_ssg_file", &pyssg_get_credentials_from_ssg_file);
 }
