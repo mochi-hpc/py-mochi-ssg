@@ -19,11 +19,6 @@
 #include <ssg-mpi.h>
 #endif
 #include <string>
-#if HAS_DRC
-extern "C" {
-#include <rdmacred.h>
-}
-#endif
 
 using namespace std::string_literals;
 namespace py11 = pybind11;
@@ -176,31 +171,29 @@ static int pyssg_group_join(pymargo_instance_id mid,
 static int pyssg_group_join_target(
         pymargo_instance_id mid,
         ssg_group_id_t group_id,
-        const std::string& target_addr_str,
+        pymargo_addr target_addr,
         const py11::object& update_cb)
 {
     void* update_cb_dat = static_cast<void*>(new py11::object(update_cb));
-    return ssg_group_join_target(mid, group_id, target_addr_str.c_str(), pyssg_membership_update_cb, update_cb_dat);
+    return ssg_group_join_target(mid, group_id, target_addr, pyssg_membership_update_cb, update_cb_dat);
 }
 
 static int pyssg_group_leave(ssg_group_id_t group_id) {
     return ssg_group_leave(group_id);
 }
 
-static int pyssg_group_leave_target(ssg_group_id_t group_id, const std::string& addr) {
-    return ssg_group_leave_target(group_id, addr.c_str());
+static int pyssg_group_leave_target(ssg_group_id_t group_id, pymargo_addr addr) {
+    return ssg_group_leave_target(group_id, addr);
 }
 
-static int pyssg_group_observe(pymargo_instance_id mid, ssg_group_id_t group_id) {
-    return ssg_group_observe(mid, group_id);
+static int pyssg_group_refresh(pymargo_instance_id mid, ssg_group_id_t group_id) {
+    return ssg_group_refresh(mid, group_id);
 }
 
-static int pyssg_group_observe_target(pymargo_instance_id mid, ssg_group_id_t group_id, const std::string& target_addr_str) {
-    return ssg_group_observe_target(mid, group_id, target_addr_str.c_str());
-}
-
-static int pyssg_group_unobserve(ssg_group_id_t group_id) {
-    return ssg_group_unobserve(group_id);
+static int pyssg_group_refresh_target(pymargo_instance_id mid,
+                                      ssg_group_id_t group_id,
+                                      pymargo_addr addr) {
+    return ssg_group_refresh_target(mid, group_id, addr);
 }
 
 static ssg_member_id_t pyssg_get_self_id(pymargo_instance_id mid) {
@@ -226,6 +219,17 @@ static pymargo_addr pyssg_get_group_member_addr(ssg_group_id_t group_id, ssg_mem
         throw std::runtime_error("ssg_get_group_member_addr returned "s + std::to_string(ret));
     return ADDR2CAPSULE(addr);
 }
+
+static std::string pyssg_get_group_member_addr_str(ssg_group_id_t group_id, ssg_member_id_t member_id) {
+    char* addr = nullptr;
+    int ret = ssg_get_group_member_addr_str(group_id, member_id, &addr);
+    if(ret != SSG_SUCCESS)
+        throw std::runtime_error("ssg_get_group_member_addr returned "s + std::to_string(ret));
+    auto result = std::string(addr);
+    free(addr);
+    return result;;
+}
+
 
 static int pyssg_get_group_self_rank(ssg_group_id_t group_id) {
     int rank;
@@ -259,17 +263,6 @@ static std::vector<ssg_member_id_t> pyssg_get_group_member_ids_from_range(ssg_gr
     if(ret != SSG_SUCCESS)
         throw std::runtime_error("ssg_get_group_member_ids_from_range returned "s + std::to_string(ret));
     return result;
-}
-
-static std::string pyssg_group_id_get_addr_str(ssg_group_id_t group_id, unsigned int addr_index) {
-    char* addr = NULL;
-    int ret = ssg_group_id_get_addr_str(group_id, addr_index, &addr);
-    if(ret != SSG_SUCCESS) {
-        throw std::runtime_error("ssg_group_id_get_addr_str returned "s + std::to_string(ret));
-    }
-    auto addr_str = std::string(addr);
-    free(addr);
-    return addr_str;
 }
 
 static int64_t pyssg_group_id_get_cred(ssg_group_id_t group_id) {
@@ -307,31 +300,40 @@ static void pyssg_group_dump(ssg_group_id_t group_id) {
     ssg_group_dump(group_id);
 }
 
-uint32_t pyssg_get_credentials_from_ssg_file(const std::string& filename) {
-    uint32_t cookie = 0;
-#if HAS_DRC
-    int num_addrs = 1;
-    ssg_group_id_t gid;
-    int ret = ssg_group_id_load(filename.c_str(), &num_addrs, &gid);
+static int64_t pyssg_get_group_cred_from_buf(const std::string& buf) {
+    int64_t cred;
+    int ret = ssg_get_group_cred_from_buf(buf.c_str(), buf.size(), &cred);
     if(ret != SSG_SUCCESS) {
-        throw std::runtime_error("Could not load SSG group id from file");
+        throw std::runtime_error("Could not get group credential from buffer");
     }
-    int64_t credential_id = -1;
-    ret = ssg_group_id_get_cred(gid, &credential_id);
-    if(credential_id == -1)
-        return cookie;
-    //ssg_group_destroy(gid);
+    return cred;
+}
 
-    drc_info_handle_t drc_credential_info;
-
-    ret = drc_access(credential_id, 0, &drc_credential_info);
-    if(ret != DRC_SUCCESS) {
-        throw std::runtime_error("drc_access failed");
+int64_t pyssg_get_group_cred_from_file(const std::string& filename) {
+    int64_t cred;
+    int ret = ssg_get_group_cred_from_file(filename.c_str(), &cred);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("Could not get group credential from file");
     }
+    return cred;
+}
 
-    cookie = drc_get_first_cookie(drc_credential_info);
-#endif
-    return cookie;
+static std::string pyssg_get_group_transport_from_buf(const std::string& buf) {
+    char tbuf[128];
+    int ret = ssg_get_group_transport_from_buf(buf.c_str(), buf.size(), tbuf, 128);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("Could not get group transport from buffer");
+    }
+    return std::string(tbuf);
+}
+
+static std::string pyssg_get_group_transport_from_file(const std::string& filename) {
+    char tbuf[128];
+    int ret = ssg_get_group_transport_from_file(filename.c_str(), tbuf, 128);
+    if(ret != SSG_SUCCESS) {
+        throw std::runtime_error("Could not get group transport from file");
+    }
+    return std::string(tbuf);
 }
 
 PYBIND11_MODULE(_pyssg, m)
@@ -361,21 +363,23 @@ PYBIND11_MODULE(_pyssg, m)
     m.def("group_join_target", &pyssg_group_join_target);
     m.def("group_leave", &pyssg_group_leave);
     m.def("group_leave_target", &pyssg_group_leave_target);
-    m.def("group_observe", &pyssg_group_observe);
-    m.def("group_observe_target", &pyssg_group_observe_target);
-    m.def("group_unobserve", &pyssg_group_unobserve);
+    m.def("group_refresh", &pyssg_group_refresh);
+    m.def("group_refresh_target", &pyssg_group_refresh_target);
     m.def("group_get_size", &pyssg_get_group_size);
     m.def("group_get_member_addr", &pyssg_get_group_member_addr);
+    m.def("group_get_member_addr_str", &pyssg_get_group_member_addr_str);
     m.def("group_get_self_rank", &pyssg_get_group_self_rank);
     m.def("group_get_member_rank", &pyssg_get_group_member_rank);
     m.def("group_get_member_id_from_rank", &pyssg_get_group_member_id_from_rank);
     m.def("group_get_member_ids_from_range", &pyssg_get_group_member_ids_from_range);
-    m.def("group_id_get_addr_str", &pyssg_group_id_get_addr_str);
     m.def("group_id_get_cred", &pyssg_group_id_get_cred);
     m.def("group_id_serialize", &pyssg_group_id_serialize);
     m.def("group_id_deserialize", &pyssg_group_id_deserialize);
     m.def("group_id_store", &pyssg_group_id_store);
     m.def("group_id_load", &pyssg_group_id_load);
     m.def("group_dump", &pyssg_group_dump);
-    m.def("get_credentials_from_ssg_file", &pyssg_get_credentials_from_ssg_file);
+    m.def("get_group_cred_from_buf", &pyssg_get_group_cred_from_buf);
+    m.def("get_group_cred_from_file", &pyssg_get_group_cred_from_file);
+    m.def("get_group_transport_from_buf", &pyssg_get_group_transport_from_buf);
+    m.def("get_group_transport_from_file", &pyssg_get_group_transport_from_file);
 }

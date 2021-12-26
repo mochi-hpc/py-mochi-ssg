@@ -111,19 +111,12 @@ class Group():
         self.__is_member = False
         self.__group_id = None
 
-    def observe(self):
+    def refresh(self):
         if self.__is_member:
-            raise RuntimeError('Members cannot be observers')
-        ret = _pyssg.group_observe(self.__mid, self.__group_id)
+            pass
+        _pyssg.group_refresh(self.__mid, self.__group_id)
         if ret != 0:
             raise RuntimeError('Could not observe group')
-
-    def unobserve(self):
-        if self.__is_member:
-            raise RuntimeError('Members cannot be observers')
-        ret = _pyssg.group_unobserve(self.__group_id)
-        if ret != 0:
-            raise RuntimeError('Could not unobserve group')
 
     @property
     def size(self):

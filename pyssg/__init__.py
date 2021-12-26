@@ -23,4 +23,7 @@ if (__auto_init == 1):
     init()
     atexit.register(finalize)
 
-get_credentials_from_ssg_file = _pyssg.get_credentials_from_ssg_file
+get_group_cred_from_file = _pyssg.get_group_cred_from_file
+get_group_cred_from_buf = _pyssg.get_group_cred_from_buf
+get_group_transport_from_file = _pyssg.get_group_transport_from_file
+get_group_transport_from_buf = _pyssg.get_group_transport_from_buf
