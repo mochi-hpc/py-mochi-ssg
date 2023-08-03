@@ -61,7 +61,7 @@ pymobject_server_module = Extension('_pyssg', ["pyssg/src/ssg.cpp"],
                                   ('HAS_DRC', has_cray_drc)])
 
 setup(name='pyssg',
-      version='0.1.2',
+      version='0.2.0',
       author='Matthieu Dorier',
       description="""Python binding for SSG""",
       ext_modules=[ pymobject_server_module ],
