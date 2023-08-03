@@ -265,10 +265,6 @@ static std::vector<ssg_member_id_t> pyssg_get_group_member_ids_from_range(ssg_gr
     return result;
 }
 
-static int64_t pyssg_group_id_get_cred(ssg_group_id_t group_id) {
-    return pyssg_group_id_get_cred(group_id);
-}
-
 static std::string pyssg_group_id_serialize(ssg_group_id_t group_id, int num_addrs) {
     char* buf = nullptr;
     size_t buf_size = 0;
@@ -372,7 +368,6 @@ PYBIND11_MODULE(_pyssg, m)
     m.def("group_get_member_rank", &pyssg_get_group_member_rank);
     m.def("group_get_member_id_from_rank", &pyssg_get_group_member_id_from_rank);
     m.def("group_get_member_ids_from_range", &pyssg_get_group_member_ids_from_range);
-    m.def("group_id_get_cred", &pyssg_group_id_get_cred);
     m.def("group_id_serialize", &pyssg_group_id_serialize);
     m.def("group_id_deserialize", &pyssg_group_id_deserialize);
     m.def("group_id_store", &pyssg_group_id_store);
