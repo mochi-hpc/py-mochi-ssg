@@ -26,8 +26,8 @@ namespace py11 = pybind11;
 typedef py11::capsule pymargo_instance_id;
 typedef py11::capsule pymargo_addr;
 
-#define MID2CAPSULE(__mid) py11::capsule((void*)(__mid), "margo_instance_id", nullptr)
-#define ADDR2CAPSULE(__addr) py11::capsule((void*)(__addr), "hg_addr_t", nullptr)
+#define MID2CAPSULE(__mid) py11::capsule((void*)(__mid), "margo_instance_id")
+#define ADDR2CAPSULE(__addr) py11::capsule((void*)(__addr), "hg_addr_t")
 
 static void pyssg_membership_update_cb(void* group_data, ssg_member_id_t member_id, ssg_member_update_type_t update_type) {
     PyGILState_STATE gstate;
